@@ -1,0 +1,11 @@
+streamlit
+python-dotenv
+langchain
+langgraph
+langchain-google-genai
+langchain-openai
+langchain-mistralai
+pydantic
+psycopg[binary]
+pgvector
+sqlalchemy
