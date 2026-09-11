@@ -1,11 +1,9 @@
-from app.llm.gemini import get_gemini
+from app.llm.factory import invoke_with_fallback
 from app.research.state import ResearchState
 from app.research.tools import web_search, retrieve_documents
 
 
 def research_node(state: ResearchState) -> ResearchState:
-    llm = get_gemini()
-
     pitch = state.get("pitch", "")
     query = state.get("query", "").strip()
 
@@ -75,7 +73,19 @@ Return these sections:
 Do not invent facts or sources.
 """
 
-    response = llm.invoke(prompt)
+    # LLM fallback:
+    # Groq → OpenRouter → Gemini
+    response = invoke_with_fallback(prompt)
+
+    content = response.content
+
+    if isinstance(content, list):
+        content = "".join(
+            part.get("text", "") if isinstance(part, dict) else str(part)
+            for part in content
+        )
+    elif not isinstance(content, str):
+        content = str(content)
 
     return {
         "query": query,
@@ -83,7 +93,7 @@ Do not invent facts or sources.
         "search_results": search_results,
         "documents": documents,
         "retrieved_context": retrieved_context,
-        "research_summary": response.content,
+        "research_summary": content,
         "sources": [
             item.get("url", "")
             for item in search_results

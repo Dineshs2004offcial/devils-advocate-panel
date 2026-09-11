@@ -1,11 +1,9 @@
-from app.llm.gemini import get_gemini
+from app.llm.factory import invoke_with_fallback
 from app.agents.router.state import RouterState
 from app.agents.router.prompts import ROUTER_SYSTEM_PROMPT
 
 
 def router_node(state: RouterState) -> RouterState:
-    llm = get_gemini()
-
     pitch = state["pitch"]
 
     prompt = f"""
@@ -15,7 +13,7 @@ Startup Pitch:
 {pitch}
 """
 
-    response = llm.invoke(prompt)
+    response = invoke_with_fallback(prompt)
 
     content = response.content
     if isinstance(content, list):

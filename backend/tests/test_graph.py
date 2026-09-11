@@ -1,4 +1,9 @@
+import sys
+
 from app.graph.graph import build_panel_graph
+
+if sys.stdout.encoding != "utf-8":
+    sys.stdout.reconfigure(encoding="utf-8")
 
 
 

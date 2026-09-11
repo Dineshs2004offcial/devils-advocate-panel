@@ -1,11 +1,34 @@
-from app.llm.gemini import get_gemini
+import re
+
+from app.llm.factory import invoke_with_fallback
 from app.agents.cross_examiner.state import CrossExaminerState
 from app.agents.cross_examiner.prompts import CROSS_EXAMINER_SYSTEM_PROMPT
 
 
-def cross_examiner_node(state: CrossExaminerState) -> CrossExaminerState:
-    llm = get_gemini()
+def _extract_section(content: str, section: str, next_sections: list[str]) -> str:
+    """Safely extract a labeled section from the LLM response handling markdown formatting."""
+    clean_sec = re.escape(section.rstrip(":").strip("*# ")).replace(r"\ ", r"\s+")
+    next_secs_pattern = "|".join(
+        [
+            re.escape(s.rstrip(":").strip("*# ")).replace(r"\ ", r"\s+")
+            for s in next_sections
+        ]
+    )
 
+    if next_secs_pattern:
+        pattern = rf"(?:^|\n)[#*\s]*{clean_sec}[:*#\s]*(.*?)(?=(?:\n[#*\s]*(?:{next_secs_pattern})[:*#\s])|$)"
+    else:
+        pattern = rf"(?:^|\n)[#*\s]*{clean_sec}[:*#\s]*(.*)$"
+
+    match = re.search(pattern, content, re.IGNORECASE | re.DOTALL)
+
+    if not match:
+        return ""
+
+    return match.group(1).strip(" *#\n\r")
+
+
+def cross_examiner_node(state: CrossExaminerState) -> CrossExaminerState:
     pitch = state.get("pitch", "")
     round_number = state.get("round_number", 1)
 
@@ -37,9 +60,10 @@ PREVIOUS FOUNDER RESPONSE:
 {user_response if user_response else "No response yet. This is the first challenge."}
 """
 
-    response = llm.invoke(prompt)
+    response = invoke_with_fallback(prompt)
 
     content = response.content
+
     if isinstance(content, list):
         content = "".join(
             part.get("text", "") if isinstance(part, dict) else str(part)
@@ -48,31 +72,31 @@ PREVIOUS FOUNDER RESPONSE:
     elif not isinstance(content, str):
         content = str(content)
 
-    contradiction = ""
-    critical_weakness = ""
-    challenge = ""
-    continue_round = True
+    contradiction = _extract_section(
+        content,
+        "CONTRADICTION:",
+        ["CRITICAL WEAKNESS:", "CHALLENGE:", "CONTINUE:"],
+    )
 
-    # Parse CONTRADICTION
-    if "CONTRADICTION:" in content:
-        contradiction = content.split("CONTRADICTION:", 1)[1]
+    critical_weakness = _extract_section(
+        content,
+        "CRITICAL WEAKNESS:",
+        ["CHALLENGE:", "CONTINUE:"],
+    )
 
-    # Parse CRITICAL WEAKNESS
-    if "CRITICAL WEAKNESS:" in contradiction:
-        contradiction, critical_weakness = contradiction.split(
-            "CRITICAL WEAKNESS:", 1
-        )
+    challenge = _extract_section(
+        content,
+        "CHALLENGE:",
+        ["CONTINUE:"],
+    )
 
-    # Parse CHALLENGE
-    if "CHALLENGE:" in critical_weakness:
-        critical_weakness, challenge = critical_weakness.split(
-            "CHALLENGE:", 1
-        )
+    continue_value = _extract_section(
+        content,
+        "CONTINUE:",
+        [],
+    )
 
-    # Parse CONTINUE
-    if "CONTINUE:" in challenge:
-        challenge, continue_value = challenge.split("CONTINUE:", 1)
-        continue_round = continue_value.strip().lower().startswith("yes")
+    continue_round = continue_value.lower().startswith("yes")
 
     return {
         "pitch": pitch,
@@ -81,8 +105,8 @@ PREVIOUS FOUNDER RESPONSE:
         "financial_response": financial_response,
         "market_response": market_response,
         "user_response": user_response,
-        "contradiction": contradiction.strip(),
-        "critical_weakness": critical_weakness.strip(),
-        "challenge": challenge.strip(),
+        "contradiction": contradiction,
+        "critical_weakness": critical_weakness,
+        "challenge": challenge,
         "continue_round": continue_round,
     }

@@ -1,11 +1,28 @@
-from app.llm.gemini import get_gemini
+import re
+
+from app.llm.factory import invoke_with_fallback
 from app.graph.subgraphs.financial.state import FinancialState
 from app.graph.subgraphs.financial.prompts import FINANCIAL_SYSTEM_PROMPT
 
 
-def financial_analysis_node(state: FinancialState) -> FinancialState:
-    llm = get_gemini()
+def _extract_section(content: str, section: str, next_sections: list[str]) -> str:
+    clean_sec = re.escape(section.rstrip(":").strip("*# "))
+    next_secs_pattern = "|".join(
+        [re.escape(s.rstrip(":").strip("*# ")) for s in next_sections]
+    )
 
+    if next_secs_pattern:
+        pattern = rf"(?:^|\n)[#*\s]*{clean_sec}[:*#\s]*(.*?)(?=(?:\n[#*\s]*(?:{next_secs_pattern})[:*#\s])|$)"
+    else:
+        pattern = rf"(?:^|\n)[#*\s]*{clean_sec}[:*#\s]*(.*)$"
+
+    match = re.search(pattern, content, re.IGNORECASE | re.DOTALL)
+    if not match:
+        return ""
+    return match.group(1).strip(" *#\n\r")
+
+
+def financial_analysis_node(state: FinancialState) -> FinancialState:
     pitch = state["pitch"]
 
     prompt = f"""
@@ -15,7 +32,7 @@ Startup Pitch:
 {pitch}
 """
 
-    response = llm.invoke(prompt)
+    response = invoke_with_fallback(prompt)
 
     content = response.content
     if isinstance(content, list):
@@ -26,26 +43,15 @@ Startup Pitch:
     elif not isinstance(content, str):
         content = str(content)
 
-    analysis_summary = ""
-    concern = ""
-    challenge = ""
-
-    if "Analysis Summary:" in content:
-        analysis_summary = content.split("Analysis Summary:", 1)[1]
-
-    if "Concern:" in analysis_summary:
-        analysis_summary, concern = analysis_summary.split(
-            "Concern:", 1
-        )
-
-    if "Challenge:" in concern:
-        concern, challenge = concern.split(
-            "Challenge:", 1
-        )
+    analysis_summary = _extract_section(
+        content, "Analysis Summary:", ["Concern:", "Challenge:"]
+    )
+    concern = _extract_section(content, "Concern:", ["Challenge:"])
+    challenge = _extract_section(content, "Challenge:", [])
 
     return {
         "pitch": pitch,
-        "analysis_summary": analysis_summary.strip(),
-        "concern": concern.strip(),
-        "challenge": challenge.strip(),
+        "analysis_summary": analysis_summary,
+        "concern": concern,
+        "challenge": challenge,
     }

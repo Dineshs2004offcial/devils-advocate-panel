@@ -1,10 +1,9 @@
-from app.llm.gemini import get_gemini
+from app.llm.factory import invoke_with_fallback
 from app.graph.subgraphs.supervisor.state import SupervisorState
 from app.graph.subgraphs.supervisor.prompts import SUPERVISOR_SYSTEM_PROMPT
 
 
 def supervisor_node(state: SupervisorState) -> SupervisorState:
-    llm = get_gemini()
     pitch = state.get("pitch", "")
 
     prompt = f"""
@@ -14,7 +13,7 @@ Startup Pitch:
 {pitch}
 """
 
-    response = llm.invoke(prompt)
+    response = invoke_with_fallback(prompt)
 
     content = response.content
     if isinstance(content, list):
