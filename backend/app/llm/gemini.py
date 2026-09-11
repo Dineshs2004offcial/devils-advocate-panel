@@ -6,4 +6,5 @@ def get_gemini():
     return ChatGoogleGenerativeAI(
         model=settings.GEMINI_MODEL,
         google_api_key=settings.GEMINI_API_KEY,
+        max_retries=3,
     )
