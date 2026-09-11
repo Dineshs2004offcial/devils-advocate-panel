@@ -1,3 +1,5 @@
+from app.research.graph import build_research_graph
+
 from langgraph.graph import StateGraph, END
 
 from app.graph.state import PanelState
@@ -12,6 +14,7 @@ from app.graph.nodes import (
     founder_response_node,
 )
 
+from app.research.graph import build_research_graph
 
 def route_after_cross_examiner(state: PanelState):
     """
@@ -31,7 +34,10 @@ def build_panel_graph():
     # Nodes
     # -------------------------
 
+    research_graph = build_research_graph()
+
     graph.add_node("router", router_node)
+    graph.add_node("research", research_graph)
     graph.add_node("supervisor", supervisor_node)
 
     graph.add_node("vc", vc_node)
@@ -53,7 +59,8 @@ def build_panel_graph():
     # Initial flow
     # -------------------------
 
-    graph.add_edge("router", "supervisor")
+    graph.add_edge("router", "research")
+    graph.add_edge("research", "supervisor")
 
     graph.add_edge("supervisor", "vc")
     graph.add_edge("supervisor", "financial")

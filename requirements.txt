@@ -9,3 +9,4 @@ pydantic
 psycopg[binary]
 pgvector
 sqlalchemy
+tavily-python
