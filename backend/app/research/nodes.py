@@ -1,26 +1,25 @@
-from app.llm.factory import invoke_with_fallback
+from app.llm.gemini import get_gemini
 from app.research.state import ResearchState
-from app.research.tools import web_search, retrieve_documents
+from app.research.tools import web_search
+from app.rag.retriever import retrieve_documents
 
 
 def research_node(state: ResearchState) -> ResearchState:
+    llm = get_gemini()
+
     pitch = state.get("pitch", "")
-    query = state.get("query", "").strip()
+    query = state.get("query", "").strip() or pitch
 
-    if not query:
-        query = pitch
-
-    # Real web search
+    # Web research
     search_results = web_search(query)
 
-    # Local document retrieval
-    documents = state.get("documents", [])
-    retrieved_documents = retrieve_documents(query, documents)
+    # RAG / ChromaDB retrieval
+    rag_docs = retrieve_documents(query, k=5)
 
     retrieved_context = [
-        str(document.get("text", ""))
-        for document in retrieved_documents
-        if document.get("text")
+        doc.page_content
+        for doc in rag_docs
+        if doc.page_content
     ]
 
     search_context = "\n".join(
@@ -30,12 +29,12 @@ def research_node(state: ResearchState) -> ResearchState:
         for item in search_results
     )
 
-    document_context = "\n".join(retrieved_context)
+    rag_context = "\n\n".join(retrieved_context)
 
     prompt = f"""
 You are the research analyst for a Devil's Advocate investment panel.
 
-Analyze the startup pitch using ONLY the available research context.
+Analyze the startup pitch using only the provided research context.
 
 STARTUP PITCH:
 {pitch}
@@ -46,19 +45,16 @@ RESEARCH QUERY:
 WEB RESEARCH:
 {search_context}
 
-DOCUMENT CONTEXT:
-{document_context}
+RAG KNOWLEDGE:
+{rag_context}
 
-Provide a structured research report.
+Rules:
+- Do not invent facts, statistics, companies, or sources.
+- Separate Evidence from Inference.
+- Cite sources when available.
+- If evidence is insufficient, say so.
 
-Use ONLY the information provided in the WEB RESEARCH and DOCUMENT CONTEXT.
-
-For every important factual claim:
-- Identify the supporting source when available.
-- Do not invent statistics, companies, market sizes, or facts.
-- Clearly label information as Evidence or Inference.
-
-Return these sections:
+Return:
 
 1. MARKET LANDSCAPE
 2. COMPETITORS
@@ -69,31 +65,16 @@ Return these sections:
 7. INFERENCES
 8. QUESTIONS FOR THE INVESTMENT PANEL
 9. SOURCES
-
-Do not invent facts or sources.
 """
 
-    # LLM fallback:
-    # Groq → OpenRouter → Gemini
-    response = invoke_with_fallback(prompt)
-
-    content = response.content
-
-    if isinstance(content, list):
-        content = "".join(
-            part.get("text", "") if isinstance(part, dict) else str(part)
-            for part in content
-        )
-    elif not isinstance(content, str):
-        content = str(content)
+    response = llm.invoke(prompt)
 
     return {
         "query": query,
         "pitch": pitch,
         "search_results": search_results,
-        "documents": documents,
         "retrieved_context": retrieved_context,
-        "research_summary": content,
+        "research_summary": response.content,
         "sources": [
             item.get("url", "")
             for item in search_results

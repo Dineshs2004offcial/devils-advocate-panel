@@ -1,0 +1,39 @@
+import os
+from dotenv import load_dotenv, find_dotenv
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, declarative_base
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+load_dotenv(find_dotenv())
+
+DATABASE_URL = os.getenv(
+    "DATABASE_URL",
+    "postgresql+pg8000://postgres:3131@localhost:5432/devils_advocate"
+)
+
+# Use pg8000 driver for PostgreSQL if no specific driver is given
+if DATABASE_URL.startswith("postgresql://"):
+    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+pg8000://", 1)
+elif DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+pg8000://", 1)
+
+engine = create_engine(DATABASE_URL)
+
+SessionLocal = sessionmaker(
+    autocommit=False,
+    autoflush=False,
+    bind=engine
+)
+
+Base = declarative_base()
+
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()

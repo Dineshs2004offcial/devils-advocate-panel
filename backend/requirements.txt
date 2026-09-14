@@ -1,3 +1,5 @@
+fastapi
+uvicorn
 streamlit
 python-dotenv
 langchain
@@ -7,5 +9,6 @@ langchain-openai
 langchain-mistralai
 pydantic
 psycopg[binary]
+pg8000
 pgvector
 sqlalchemy
