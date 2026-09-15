@@ -1,91 +1,68 @@
-from app.research.graph import build_research_graph
-
-from langgraph.graph import StateGraph, END
-
-from app.graph.state import PanelState
+from langgraph.graph import StateGraph, START, END
+from app.graph.state import DebateState
 from app.graph.nodes import (
-    router_node,
-    supervisor_node,
-    vc_node,
-    financial_node,
-    market_node,
-    combine_panel_responses,
-    cross_examiner_node,
-    founder_response_node,
+    research_node,
+    round_1_node,
+    cross_challenge_node,
+    rebuttal_node,
+    round_2_node,
+    loop_controller_node,
+    judge_node,
 )
 
-from app.research.graph import build_research_graph
 
-def route_after_cross_examiner(state: PanelState):
+def check_debate_continuation(state: DebateState) -> str:
     """
-    Decide whether another adversarial round is required.
+    Conditional routing edge checking max_rounds to prevent infinite loops.
     """
+    round_num = state.get("round_number", 2)
+    max_rounds = state.get("max_rounds", 2)
+    continue_debate = state.get("continue_debate", False)
 
-    if state.get("continue_round", False):
-        return "next_round"
+    if continue_debate and round_num < max_rounds:
+        return "continue"
+    return "judge"
 
-    return "finish"
 
+def build_debate_graph():
+    """
+    Constructs and compiles the full LangGraph Multi-Agent Debate Loop:
+    User Pitch -> MCP Research -> Round 1 -> Cross Challenge -> Rebuttal -> Round 2 -> Conditional Edge (max_rounds=2) -> AI Judge -> END
+    """
+    builder = StateGraph(DebateState)
 
-def build_panel_graph():
-    graph = StateGraph(PanelState)
+    # Add core workflow nodes
+    builder.add_node("research", research_node)
+    builder.add_node("round_1", round_1_node)
+    builder.add_node("cross_challenge", cross_challenge_node)
+    builder.add_node("rebuttal", rebuttal_node)
+    builder.add_node("round_2", round_2_node)
+    builder.add_node("loop_controller", loop_controller_node)
+    builder.add_node("judge", judge_node)
 
-    # -------------------------
-    # Nodes
-    # -------------------------
+    # Linear and conditional debate flow
+    builder.add_edge(START, "research")
+    builder.add_edge("research", "round_1")
+    builder.add_edge("round_1", "cross_challenge")
+    builder.add_edge("cross_challenge", "rebuttal")
+    builder.add_edge("rebuttal", "round_2")
+    builder.add_edge("round_2", "loop_controller")
 
-    research_graph = build_research_graph()
-
-    graph.add_node("router", router_node)
-    graph.add_node("research", research_graph)
-    graph.add_node("supervisor", supervisor_node)
-
-    graph.add_node("vc", vc_node)
-    graph.add_node("financial", financial_node)
-    graph.add_node("market", market_node)
-
-    graph.add_node("combine", combine_panel_responses)
-    graph.add_node("cross_examiner", cross_examiner_node)
-
-    graph.add_node("founder_response", founder_response_node)
-
-    # -------------------------
-    # Entry
-    # -------------------------
-
-    graph.set_entry_point("router")
-
-    # -------------------------
-    # Initial flow
-    # -------------------------
-
-    graph.add_edge("router", "research")
-    graph.add_edge("research", "supervisor")
-
-    graph.add_edge("supervisor", "vc")
-    graph.add_edge("supervisor", "financial")
-    graph.add_edge("supervisor", "market")
-
-    graph.add_edge("vc", "combine")
-    graph.add_edge("financial", "combine")
-    graph.add_edge("market", "combine")
-
-    graph.add_edge("combine", "cross_examiner")
-
-    # Cross-examiner → Founder response
-    graph.add_edge("cross_examiner", "founder_response")
-
-    # -------------------------
-    # Conditional round loop
-    # -------------------------
-
-    graph.add_conditional_edges(
-        "founder_response",
-        route_after_cross_examiner,
+    # Conditional LangGraph edge with max_rounds=2
+    builder.add_conditional_edges(
+        "loop_controller",
+        check_debate_continuation,
         {
-            "next_round": "supervisor",
-            "finish": END,
+            "continue": "cross_challenge",
+            "judge": "judge",
         },
     )
 
-    return graph.compile()
+    builder.add_edge("judge", END)
+
+    return builder.compile()
+
+
+# Alias for backwards compatibility
+build_panel_graph = build_debate_graph
+debate_graph = build_debate_graph()

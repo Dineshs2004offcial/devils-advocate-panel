@@ -3,51 +3,72 @@ from dotenv import load_dotenv, find_dotenv
 
 load_dotenv(find_dotenv())
 
+_cached_groq = None
+_cached_openrouter = None
+_cached_gemini = None
+
 
 def ask_ai(prompt: str) -> str:
-    """Invokes AI across available models and providers with automatic fallback."""
+    """Invokes AI across available models and providers with fast failover and connection caching."""
+    global _cached_groq, _cached_openrouter, _cached_gemini
+
+    # 1. Try Groq
+    groq_api_key = os.getenv("GROQ_API_KEY")
+    if groq_api_key:
+        try:
+            from langchain_groq import ChatGroq
+            if _cached_groq is None:
+                _cached_groq = ChatGroq(
+                    model=os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile"),
+                    api_key=groq_api_key,
+                    timeout=4,
+                    max_retries=0,
+                )
+            res = _cached_groq.invoke(prompt)
+            if res and res.content:
+                return str(res.content)
+        except Exception:
+            pass
+
+    # 2. Try Gemini
     google_api_key = os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
     if google_api_key:
-        from langchain_google_genai import ChatGoogleGenerativeAI
-        models_to_try = [
-            os.getenv("GEMINI_MODEL", "gemini-3.6-flash"),
-            "gemini-2.5-flash",
-            "gemini-1.5-flash",
-            "gemini-1.5-pro",
-        ]
-        for m in models_to_try:
-            try:
-                llm = ChatGoogleGenerativeAI(
-                    model=m,
+        try:
+            from langchain_google_genai import ChatGoogleGenerativeAI
+            if _cached_gemini is None:
+                _cached_gemini = ChatGoogleGenerativeAI(
+                    model=os.getenv("GEMINI_MODEL", "gemini-1.5-flash"),
                     google_api_key=google_api_key,
+                    timeout=4,
+                    max_retries=0,
                 )
-                response = llm.invoke(prompt)
-                if isinstance(response.content, list):
-                    texts = [
-                        item.get("text", "") if isinstance(item, dict) else getattr(item, "text", str(item))
-                        for item in response.content
-                    ]
-                    return "".join(texts)
-                return str(response.content)
-            except Exception as e:
-                print(f"[AI Service] Gemini model '{m}' failed: {e}")
+            response = _cached_gemini.invoke(prompt)
+            if isinstance(response.content, list):
+                texts = [
+                    item.get("text", "") if isinstance(item, dict) else getattr(item, "text", str(item))
+                    for item in response.content
+                ]
+                return "".join(texts)
+            return str(response.content)
+        except Exception:
+            pass
 
-    # 2. Try OpenAI
+    # 3. Try OpenAI
     openai_api_key = os.getenv("OPENAI_API_KEY")
     if openai_api_key:
         try:
             from openai import OpenAI
-            client = OpenAI(api_key=openai_api_key)
+            client = OpenAI(api_key=openai_api_key, timeout=4)
             model_name = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
             chat_completion = client.chat.completions.create(
                 model=model_name,
                 messages=[{"role": "user", "content": prompt}],
             )
             return chat_completion.choices[0].message.content or ""
-        except Exception as e:
-            print(f"[AI Service] OpenAI invocation failed: {e}")
+        except Exception:
+            pass
 
-    # 3. Graceful fallback if external APIs are rate-limited or offline
+    # 4. Graceful structured fallback
     return (
         "AI Analysis Summary:\n"
         "- Assess unit economics, customer acquisition cost (CAC), and customer lifetime value (LTV).\n"

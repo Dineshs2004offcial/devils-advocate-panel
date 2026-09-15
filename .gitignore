@@ -26,3 +26,21 @@ build/
 # OS
 .DS_Store
 Thumbs.db
+
+
+# Environment
+.env
+
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# Frontend
+node_modules/
+dist/
+build/
+
+# Chroma / generated vector database
+backend/data/chroma/
+data/chroma/

@@ -33,6 +33,11 @@ class StartupPitch(BaseModel):
         description="Funding requested",
         json_schema_extra={"example": 500000.0}
     )
+    rounds: Optional[int] = Field(
+        default=2,
+        description="Number of debate rounds (1, 2, or 3)",
+        json_schema_extra={"example": 2}
+    )
     user_id: Optional[str] = Field(
         default=None,
         description="Optional user ID",

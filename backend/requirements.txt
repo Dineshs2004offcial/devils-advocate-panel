@@ -12,3 +12,7 @@ psycopg[binary]
 pg8000
 pgvector
 sqlalchemy
+mcp[cli]
+requests
+beautifulsoup4
+psycopg2-binary
