@@ -1,10 +1,12 @@
-const PRIMARY_API_URL = "http://127.0.0.1:8000";
+const ENV_API_URL = import.meta.env?.VITE_API_URL || "";
+const PRIMARY_API_URL = ENV_API_URL || "http://127.0.0.1:8000";
 const BACKUP_API_URL = "http://localhost:8000";
 const STORAGE_KEY = "devils_advocate_evaluations_v2";
 
 async function postWithFallback(endpoint, data) {
   const urls = [
-    endpoint, // relative via Vite proxy
+    ...(ENV_API_URL ? [`${ENV_API_URL}${endpoint}`] : []),
+    endpoint, // relative via Vite proxy or Vercel rewrites
     `${PRIMARY_API_URL}${endpoint}`,
     `${BACKUP_API_URL}${endpoint}`,
   ];
@@ -52,7 +54,8 @@ export async function evaluatePitch(pitch, rounds = 2) {
 
 async function getWithFallback(endpoint) {
   const urls = [
-    endpoint, // relative via Vite proxy
+    ...(ENV_API_URL ? [`${ENV_API_URL}${endpoint}`] : []),
+    endpoint, // relative via Vite proxy or Vercel rewrites
     `${PRIMARY_API_URL}${endpoint}`,
     `${BACKUP_API_URL}${endpoint}`,
   ];
