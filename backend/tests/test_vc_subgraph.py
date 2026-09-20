@@ -1,15 +1,23 @@
-from app.graph.subgraphs.vc.graph import vc_graph
+import pytest
+from app.graph.subgraphs.vc.graph import vc_graph, build_vc_graph
 
 
-result = vc_graph.invoke({
-    "pitch": """
-    I want to build an AI-powered platform that helps college
-    students learn programming through personalized lessons.
-    """
-})
+def test_vc_subgraph_compilation():
+    graph = build_vc_graph()
+    assert graph is not None
+    assert hasattr(graph, "invoke")
 
 
-print("\n=== VC ANALYSIS ===")
-print("Analysis Summary:", result.get("analysis_summary"))
-print("Concern:", result.get("concern"))
-print("Challenge:", result.get("challenge"))
+def test_vc_subgraph_invocation():
+    result = vc_graph.invoke({
+        "pitch": """
+        I want to build an AI-powered platform that helps college
+        students learn programming through personalized lessons.
+        """
+    })
+
+    assert isinstance(result, dict)
+    assert "analysis_summary" in result
+    assert "concern" in result
+    assert "challenge" in result
+    assert len(str(result.get("analysis_summary", ""))) > 0

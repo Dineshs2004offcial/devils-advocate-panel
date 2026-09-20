@@ -12,9 +12,11 @@ import {
   evaluatePitch,
   fetchMcpStatus,
   getSavedEvaluations,
+  syncHistoryWithBackend,
   saveEvaluationToHistory,
   renameSavedEvaluation,
   deleteSavedEvaluation,
+  downloadEvaluationPdf,
   exportEvaluationDossier,
 } from '../services/api';
 import {
@@ -56,14 +58,16 @@ export default function Dashboard() {
 
   // Initial Load: Stored Evaluations & MCP Status
   useEffect(() => {
-    const stored = getSavedEvaluations();
-    setEvaluationsHistory(stored);
-    if (stored.length > 0) {
-      // Auto-load most recent evaluation if available
-      setEvaluationResult(stored[0].data);
-      setActiveEvaluationId(stored[0].id);
-    }
-
+    const initHistory = async () => {
+      const stored = await syncHistoryWithBackend();
+      setEvaluationsHistory(stored);
+      if (stored.length > 0) {
+        // Auto-load most recent evaluation if available
+        setEvaluationResult(stored[0].data);
+        setActiveEvaluationId(stored[0].id);
+      }
+    };
+    initHistory();
     loadMcpStatus();
   }, []);
 
@@ -118,15 +122,14 @@ export default function Dashboard() {
   };
 
   // History Actions
-  const handleSelectRecentEvaluation = (historyItem) => {
-    if (!historyItem || !historyItem.data) return;
-    setEvaluationResult(historyItem.data);
-    setActiveEvaluationId(historyItem.id);
+  const handleSelectHistoryItem = (item) => {
+    setEvaluationResult(item.data);
+    setActiveEvaluationId(item.id);
     setError('');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleNewEvaluation = () => {
+  const handleNewPitch = () => {
     setEvaluationResult(null);
     setActiveEvaluationId(null);
     setError('');
@@ -167,9 +170,9 @@ export default function Dashboard() {
     }
   };
 
-  const handleDownloadPdfDossier = () => {
+  const handleDownloadPdfDossier = async () => {
     if (!evaluationResult) return;
-    exportEvaluationDossier(evaluationResult);
+    await downloadEvaluationPdf(evaluationResult);
   };
 
   // Data decomposition
@@ -194,8 +197,8 @@ export default function Dashboard() {
       <Sidebar
         evaluations={evaluationsHistory}
         activeEvaluationId={activeEvaluationId}
-        onSelectEvaluation={handleSelectRecentEvaluation}
-        onNewEvaluation={handleNewEvaluation}
+        onSelectEvaluation={handleSelectHistoryItem}
+        onNewEvaluation={handleNewPitch}
         onRenameEvaluation={handleRenameEvaluation}
         onDeleteEvaluation={handleDeleteEvaluation}
         onOpenCompare={() => setShowCompare(true)}

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Plus,
   Search,
@@ -13,7 +14,8 @@ import {
   Award,
   ChevronLeft,
   ChevronRight,
-  Database
+  Database,
+  Cpu
 } from './Icons';
 
 export default function Sidebar({
@@ -28,6 +30,7 @@ export default function Sidebar({
   isCollapsed = false,
   onToggleCollapse
 }) {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [editingId, setEditingId] = useState(null);
   const [editName, setEditName] = useState('');
@@ -266,14 +269,22 @@ export default function Sidebar({
         </div>
       </div>
 
-      {/* Compare Mode Launcher */}
-      <div className="sidebar-compare-wrap">
+      {/* Compare Mode & MCP Workbench Launchers */}
+      <div className="sidebar-compare-wrap" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
         <button
           className="btn-compare-link"
           onClick={onOpenCompare}
         >
           <Scale size={15} />
           <span>Compare Evaluations</span>
+        </button>
+        <button
+          className="btn-compare-link"
+          style={{ borderColor: 'rgba(129, 140, 248, 0.3)', color: '#a5b4fc' }}
+          onClick={() => navigate('/mcp')}
+        >
+          <Cpu size={15} color="#818cf8" />
+          <span>MCP Connectors Hub</span>
         </button>
       </div>
 

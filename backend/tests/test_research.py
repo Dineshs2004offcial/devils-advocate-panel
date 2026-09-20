@@ -1,9 +1,15 @@
+import pytest
 from app.research.graph import build_research_graph
 
 
-def main():
+def test_research_graph_compilation():
     graph = build_research_graph()
+    assert graph is not None
+    assert hasattr(graph, "invoke")
 
+
+def test_research_graph_invocation():
+    graph = build_research_graph()
     result = graph.invoke({
         "pitch": """
         I want to build an AI-powered platform that helps college
@@ -13,20 +19,8 @@ def main():
         "documents": [],
     })
 
-    print("\n========== RESEARCH ==========")
-
-    print("\n--- QUERY ---")
-    print(result.get("query"))
-
-    print("\n--- SEARCH RESULTS ---")
-    print(result.get("search_results"))
-
-    print("\n--- RESEARCH SUMMARY ---")
-    print(result.get("research_summary"))
-
-    print("\n--- SOURCES ---")
-    print(result.get("sources"))
-
-
-if __name__ == "__main__":
-    main()
+    assert isinstance(result, dict)
+    assert "query" in result
+    assert "search_results" in result
+    assert "research_summary" in result
+    assert "sources" in result

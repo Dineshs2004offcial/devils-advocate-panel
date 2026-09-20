@@ -11,6 +11,7 @@ import {
   Award,
   Sparkles
 } from './Icons';
+import { downloadEvaluationPdf } from '../services/api';
 
 export default function TranscriptModal({
   isOpen,
@@ -18,6 +19,7 @@ export default function TranscriptModal({
   evaluationData,
 }) {
   const [copied, setCopied] = useState(false);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
 
   if (!isOpen || !evaluationData) return null;
 
@@ -105,6 +107,17 @@ export default function TranscriptModal({
     URL.revokeObjectURL(url);
   };
 
+  const handleDownloadPdf = async () => {
+    setDownloadingPdf(true);
+    try {
+      await downloadEvaluationPdf(evaluationData);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setDownloadingPdf(false);
+    }
+  };
+
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal-box modal-lg" onClick={(e) => e.stopPropagation()}>
@@ -118,6 +131,10 @@ export default function TranscriptModal({
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <button className="btn-toolbar" onClick={handleDownloadPdf} disabled={downloadingPdf} style={{ background: '#3b82f6', color: '#ffffff', borderColor: '#2563eb' }}>
+              <Download size={14} />
+              <span>{downloadingPdf ? 'Compiling PDF...' : 'Export PDF'}</span>
+            </button>
             <button className="btn-toolbar" onClick={handleCopy}>
               {copied ? <Check size={14} color="#10b981" /> : <Copy size={14} />}
               <span>{copied ? 'Copied' : 'Copy'}</span>

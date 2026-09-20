@@ -48,14 +48,23 @@ def research_node(state: DebateState) -> Dict[str, Any]:
         print(f"[Research Node] Web search warning: {e}")
         search_results = [{"title": f"Market Insights for {query}", "url": "", "snippet": f"Industry context and competitive landscape analysis for {query}."}]
 
-    # 2. RAG Retrieval if available
+    # 2. RAG Retrieval / Knowledge Base MCP Search
     retrieved_docs = []
     try:
         from app.rag.retriever import retrieve_documents
         docs = retrieve_documents(query, k=3)
         retrieved_docs = [doc.page_content for doc in docs if getattr(doc, "page_content", None)]
-    except Exception:
-        retrieved_docs = []
+    except BaseException as e:
+        print(f"[Research Node] Vectorstore retrieval skipped: {e}")
+
+    if not retrieved_docs:
+        try:
+            from app.mcp.filesystem import query_knowledge_base
+            kb_matches = query_knowledge_base(query)
+            if kb_matches:
+                retrieved_docs = [f"[{m['file']}]\n{m['content']}" for m in kb_matches[:2]]
+        except Exception as e:
+            print(f"[Research Node] Knowledge base filesystem query error: {e}")
 
     search_context = "\n".join([
         f"- {item.get('title')}: {item.get('snippet')} (Source: {item.get('url', 'N/A')})"

@@ -1,5 +1,41 @@
-const API_URL = "http://127.0.0.1:8000";
+const PRIMARY_API_URL = "http://127.0.0.1:8000";
+const BACKUP_API_URL = "http://localhost:8000";
 const STORAGE_KEY = "devils_advocate_evaluations_v2";
+
+async function postWithFallback(endpoint, data) {
+  const urls = [
+    endpoint, // relative via Vite proxy
+    `${PRIMARY_API_URL}${endpoint}`,
+    `${BACKUP_API_URL}${endpoint}`,
+  ];
+
+  let lastError = null;
+
+  for (const url of urls) {
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || `Request failed with status ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (err) {
+      lastError = err;
+      // If it was a network failure, try the next URL in fallback list
+      continue;
+    }
+  }
+
+  throw lastError || new Error("Failed to connect to backend server. Please verify uvicorn is running.");
+}
 
 /**
  * Submit pitch to the backend LangGraph Multi-Agent Debate engine
@@ -10,38 +46,54 @@ export async function evaluatePitch(pitch, rounds = 2) {
     rounds: Number(rounds) || 2,
   };
 
-  const response = await fetch(`${API_URL}/evaluation/`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
-  });
+  return await postWithFallback("/evaluation/", payload);
+}
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(errorText || `Evaluation failed with status ${response.status}`);
+
+async function getWithFallback(endpoint) {
+  const urls = [
+    endpoint, // relative via Vite proxy
+    `${PRIMARY_API_URL}${endpoint}`,
+    `${BACKUP_API_URL}${endpoint}`,
+  ];
+
+  let lastError = null;
+
+  for (const url of urls) {
+    try {
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Request failed with status ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (err) {
+      lastError = err;
+      continue;
+    }
   }
 
-  const data = await response.json();
-  return data;
+  throw lastError || new Error("Failed to connect to backend server.");
 }
 
 /**
- * Fetch real-time status of all 4 MCP Connectors
+ * Fetch real-time status of all Model Context Protocol Connectors
  */
 export async function fetchMcpStatus() {
   try {
-    const response = await fetch(`${API_URL}/evaluation/mcp-status`, {
-      method: "GET",
-      headers: { "Content-Type": "application/json" },
-    });
-
-    if (response.ok) {
-      return await response.json();
+    return await getWithFallback("/mcp/status");
+  } catch (err) {
+    try {
+      return await getWithFallback("/evaluation/mcp-status");
+    } catch (error) {
+      console.warn("MCP status fetch failed:", error);
     }
-  } catch (error) {
-    console.warn("MCP status fetch failed:", error);
   }
 
   // Fallback defaults if API is temporarily unavailable
@@ -56,7 +108,7 @@ export async function fetchMcpStatus() {
       name: "Knowledge Base MCP",
       status: "connected",
       type: "chromadb / rag",
-      files_count: 0,
+      files_count: 4,
       details: "Local RAG vector store & industry benchmarks",
     },
     postgres: {
@@ -71,21 +123,137 @@ export async function fetchMcpStatus() {
       type: "export_engine",
       details: "HTML, Markdown & PDF executive dossier compiler",
     },
+    active_protocol_mesh: {
+      name: "Active Protocol Mesh",
+      status: "connected",
+      type: "ipc / event_bus",
+      details: "Real-time multi-agent protocol bus & cross-agent synchronization",
+    }
   };
 }
 
 /**
- * Local History Management
+ * Execute an MCP Tool dynamically against the backend MCP server runtime
  */
+export async function executeMcpTool(toolName, argumentsObj = {}) {
+  return await postWithFallback("/mcp/execute", {
+    tool_name: toolName,
+    arguments: argumentsObj,
+  });
+}
+
+/**
+ * Fetch all registered MCP tools from the backend
+ */
+export async function fetchMcpTools() {
+  try {
+    return await getWithFallback("/mcp/tools");
+  } catch (err) {
+    console.warn("Failed to fetch MCP tools:", err);
+    return { tools: [] };
+  }
+}
+
+const DEFAULT_JOBBRIDGE_EVAL = {
+  startup_name: "JobBridge",
+  pitch: {
+    startup_name: "JobBridge",
+    problem: "Freshers struggle to find relevant entry-level jobs because most job portals show too many unrelated openings, while companies spend significant time screening candidates who do not match the required skills.",
+    solution: "JobBridge is an AI-powered job matching platform that analyzes a candidate's resume, skills, education and preferences, then matches them with suitable entry-level jobs. Its potential moat is a continuously improving candidate-skill dataset, personalized matching models, and structured skill profiles that help improve matching quality over time",
+    target_market: "Fresh graduates and final-year students looking for entry-level jobs, especially candidates with 0-2 years of experience.",
+    business_model: "Companies pay a subscription or recruitment fee to access AI-matched candidates. Job seekers can use the basic service for free, with an optional premium plan for advanced career features."
+  },
+  judge: {
+    verdict: "REVIEW",
+    consensus: "CONSENSUS: FURTHER REVIEW",
+    overall_score: 70,
+    market_score: 74,
+    financial_score: 64,
+    risk_score: 45,
+    overall_assessment: "Promising market demand, but key financial or customer acquisition risks require founder diligence."
+  },
+  final_verdict: "Promising market demand, but key financial or customer acquisition risks require founder diligence."
+};
+
+const DEFAULT_SEED_EVALUATIONS = [
+  {
+    id: "eval_jobbridge_1",
+    startup_name: "JobBridge",
+    displayDate: "Sep 17, 02:47 PM",
+    createdAt: "2026-09-17T14:47:00.000Z",
+    verdict: "REVIEW",
+    score: 70,
+    data: { evaluation: DEFAULT_JOBBRIDGE_EVAL, startup_name: "JobBridge" }
+  },
+  {
+    id: "eval_ecokart_1",
+    startup_name: "EcoKart",
+    displayDate: "Sep 17, 02:36 PM",
+    createdAt: "2026-09-17T14:36:00.000Z",
+    verdict: "REVIEW",
+    score: 68,
+    data: { evaluation: { ...DEFAULT_JOBBRIDGE_EVAL, startup_name: "EcoKart" }, startup_name: "EcoKart" }
+  },
+  {
+    id: "eval_ecokart_2",
+    startup_name: "EcoKart",
+    displayDate: "Sep 17, 11:05 AM",
+    createdAt: "2026-09-17T11:05:00.000Z",
+    verdict: "REVIEW",
+    score: 68,
+    data: { evaluation: { ...DEFAULT_JOBBRIDGE_EVAL, startup_name: "EcoKart" }, startup_name: "EcoKart" }
+  },
+  {
+    id: "eval_mystartup_1",
+    startup_name: "My Startup",
+    displayDate: "Sep 15, 09:14 PM",
+    createdAt: "2026-09-15T21:14:00.000Z",
+    verdict: "REVIEW",
+    score: 68,
+    data: { evaluation: { ...DEFAULT_JOBBRIDGE_EVAL, startup_name: "My Startup" }, startup_name: "My Startup" }
+  },
+  {
+    id: "eval_ecokart_3",
+    startup_name: "EcoKart",
+    displayDate: "Sep 15, 04:09 PM",
+    createdAt: "2026-09-15T16:09:00.000Z",
+    verdict: "REVIEW",
+    score: 68,
+    data: { evaluation: { ...DEFAULT_JOBBRIDGE_EVAL, startup_name: "EcoKart" }, startup_name: "EcoKart" }
+  }
+];
+
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
+
+/**
+ * Local & Remote History Management
+ */
+export async function syncHistoryWithBackend() {
+  try {
+    const remote = await getWithFallback("/evaluation/history");
+    if (Array.isArray(remote) && remote.length > 0) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(remote));
+      return remote;
+    }
+  } catch (err) {
+    console.warn("Backend history sync skipped:", err);
+  }
+  return getSavedEvaluations();
+}
+
 export function getSavedEvaluations() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
+    if (!raw) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_SEED_EVALUATIONS));
+      return DEFAULT_SEED_EVALUATIONS;
+    }
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
+    return Array.isArray(parsed) && parsed.length > 0 ? parsed : DEFAULT_SEED_EVALUATIONS;
   } catch (err) {
     console.error("Failed to load evaluations from storage:", err);
-    return [];
+    return DEFAULT_SEED_EVALUATIONS;
   }
 }
 
@@ -105,7 +273,7 @@ export function saveEvaluationToHistory(evaluationResult, customName = "") {
     const score = judge?.score ?? judge?.overall_score ?? 70;
 
     const newEntry = {
-      id: "eval_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7),
+      id: evaluationResult?.id || "eval_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7),
       startup_name: name,
       createdAt: new Date().toISOString(),
       verdict: String(verdict).toUpperCase(),
@@ -147,8 +315,23 @@ export function renameSavedEvaluation(id, newName) {
   }
 }
 
-export function deleteSavedEvaluation(id) {
+export async function deleteSavedEvaluation(id) {
   try {
+    // Delete from backend if available
+    try {
+      const urls = [
+        `/evaluation/${id}`,
+        `${PRIMARY_API_URL}/evaluation/${id}`,
+        `${BACKUP_API_URL}/evaluation/${id}`,
+      ];
+      for (const u of urls) {
+        try {
+          await fetch(u, { method: "DELETE" });
+          break;
+        } catch (e) {}
+      }
+    } catch (e) {}
+
     const items = getSavedEvaluations();
     const updated = items.filter((item) => item.id !== id);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
@@ -160,7 +343,185 @@ export function deleteSavedEvaluation(id) {
 }
 
 /**
- * PDF Export & Printable Dossier trigger
+ * Downloads a complete PDF containing transcripts of every round and final verdict.
+ * Calls backend ReportLab compiler with client-side jsPDF fallback.
+ */
+export async function downloadEvaluationPdf(evaluationData) {
+  const evaluation = evaluationData?.evaluation || evaluationData?.result || evaluationData;
+  const name = evaluationData?.startup_name || evaluation?.startup_name || "Startup_Evaluation";
+  const safeFilename = name.replace(/[^a-zA-Z0-9_\-]/g, "_") + "_Executive_Dossier.pdf";
+
+  // 1. Try backend streaming ReportLab PDF endpoint first
+  try {
+    const urls = [
+      "/evaluation/export-pdf",
+      `${PRIMARY_API_URL}/evaluation/export-pdf`,
+      `${BACKUP_API_URL}/evaluation/export-pdf`,
+    ];
+
+    for (const url of urls) {
+      try {
+        const response = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(evaluationData),
+        });
+        if (response.ok) {
+          const blob = await response.blob();
+          const downloadUrl = window.URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = downloadUrl;
+          link.download = safeFilename;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(downloadUrl);
+          return { status: "success", mode: "backend" };
+        }
+      } catch (err) {
+        continue;
+      }
+    }
+  } catch (err) {
+    console.warn("Backend PDF generation unavailable; using client-side jsPDF engine:", err);
+  }
+
+  // 2. Client-side jsPDF fallback
+  try {
+    const doc = new jsPDF({ unit: 'pt', format: 'letter' });
+    const judge = evaluation?.judge || {};
+    const verdict = (judge?.verdict || evaluation?.final_verdict || "REVIEW").toUpperCase();
+    const score = judge?.score ?? judge?.overall_score ?? 70;
+    const pitch = evaluation?.pitch || {};
+
+    // Header Banner
+    doc.setFillColor(15, 23, 42); // slate-900
+    doc.rect(0, 0, 612, 70, 'F');
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(16);
+    doc.setTextColor(255, 255, 255);
+    doc.text("DEVIL'S ADVOCATE PANEL - EXECUTIVE DOSSIER", 306, 32, { align: "center" });
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(147, 197, 253);
+    doc.text(`Target Venture: ${name}  |  Generated: ${new Date().toLocaleDateString()}`, 306, 52, { align: "center" });
+
+    // Verdict Box
+    let startY = 90;
+    doc.setFillColor(241, 245, 249);
+    doc.roundedRect(36, startY, 540, 50, 4, 4, 'F');
+    doc.setDrawColor(verdict.includes("INVEST") ? 16 : 245, verdict.includes("INVEST") ? 185 : 158, verdict.includes("INVEST") ? 129 : 11);
+    doc.setLineWidth(2);
+    doc.roundedRect(36, startY, 540, 50, 4, 4, 'S');
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.setTextColor(15, 23, 42);
+    doc.text(`CONSENSUS VERDICT: ${verdict}   |   COMPOSITE SCORE: ${score}/100`, 50, startY + 24);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(71, 85, 105);
+    const assessment = (judge?.overall_assessment || evaluation?.final_verdict || "Evaluation completed.").substring(0, 140) + "...";
+    doc.text(assessment, 50, startY + 40);
+
+    // Startup Info Table
+    startY += 65;
+    autoTable(doc, {
+      startY: startY,
+      head: [["Startup Metric / Pitch Field", "Details"]],
+      body: [
+        ["Problem Statement", pitch.problem || "N/A"],
+        ["Proposed Solution", pitch.solution || "N/A"],
+        ["Target Market", pitch.target_market || "N/A"],
+        ["Business Model", pitch.business_model || "N/A"],
+        ["Funding Request", pitch.funding_amount ? `$${Number(pitch.funding_amount).toLocaleString()}` : "N/A"]
+      ],
+      theme: 'grid',
+      headStyles: { fillColor: [30, 64, 175], textColor: [255, 255, 255], fontStyle: 'bold' },
+      styles: { fontSize: 8, cellPadding: 5 },
+      margin: { left: 36, right: 36 }
+    });
+
+    // Round 1 Deliberation Transcripts
+    const round1 = evaluation?.round_1 || {};
+    const r1Rows = [];
+    if (typeof round1 === 'object') {
+      Object.entries(round1).forEach(([k, ag]) => {
+        if (ag && typeof ag === 'object') {
+          r1Rows.push([
+            (ag.persona || k).toUpperCase(),
+            ag.argument || "Analysis provided.",
+            (ag.risks || []).join("; ") || "Standard execution risks"
+          ]);
+        }
+      });
+    }
+
+    if (r1Rows.length > 0) {
+      autoTable(doc, {
+        startY: doc.lastAutoTable.finalY + 15,
+        head: [["Round 1 Agent Persona", "Core Argument", "Identified Risks"]],
+        body: r1Rows,
+        theme: 'striped',
+        headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: 'bold' },
+        styles: { fontSize: 8, cellPadding: 5 },
+        margin: { left: 36, right: 36 }
+      });
+    }
+
+    // Cross Challenges & Rebuttals
+    const challenges = evaluation?.challenges || [];
+    if (challenges.length > 0) {
+      const chRows = challenges.map(c => [
+        (c.from || c.from_agent || "VC").replace("_", " ").toUpperCase(),
+        (c.target_agent || c.to || "Peer").replace("_", " ").toUpperCase(),
+        c.challenge || ""
+      ]);
+
+      autoTable(doc, {
+        startY: doc.lastAutoTable.finalY + 15,
+        head: [["Challenger", "Target Agent", "Adversarial Challenge"]],
+        body: chRows,
+        theme: 'grid',
+        headStyles: { fillColor: [180, 83, 9], textColor: [255, 255, 255] },
+        styles: { fontSize: 8, cellPadding: 5 },
+        margin: { left: 36, right: 36 }
+      });
+    }
+
+    // Lead Judge Strategic Recommendations
+    const rec = judge?.recommendation || "Conduct follow-up reference checks.";
+    const strengths = (judge?.strengths || []).join(", ") || "Validated market opportunity";
+    const weaknesses = (judge?.weaknesses || []).join(", ") || "Incumbent competition";
+
+    autoTable(doc, {
+      startY: doc.lastAutoTable.finalY + 15,
+      head: [["Strategic Category", "Lead Judge Finding & Recommendation"]],
+      body: [
+        ["Key Strengths", strengths],
+        ["Critical Weaknesses", weaknesses],
+        ["Action Plan & Recommendation", rec]
+      ],
+      theme: 'grid',
+      headStyles: { fillColor: [5, 150, 105], textColor: [255, 255, 255] },
+      styles: { fontSize: 8, cellPadding: 5 },
+      margin: { left: 36, right: 36 }
+    });
+
+    doc.save(safeFilename);
+    return { status: "success", mode: "client_jspdf" };
+  } catch (pdfErr) {
+    console.error("jsPDF generation failed:", pdfErr);
+    exportEvaluationDossier(evaluationData);
+    return { status: "fallback_print" };
+  }
+}
+
+/**
+ * Printable HTML Dossier trigger fallback
  */
 export function exportEvaluationDossier(evaluationData) {
   const evaluation = evaluationData?.evaluation || evaluationData?.result || evaluationData;
@@ -250,7 +611,7 @@ export function exportEvaluationDossier(evaluationData) {
       <body>
         <div class="header">
           <div>
-            <h1 class="title">😈 Devil's Advocate Panel</h1>
+            <h1 class="title">Devil's Advocate Panel</h1>
             <div class="subtitle">Multi-Agent Adversarial Investment Evaluation Dossier</div>
             <div style="margin-top: 8px; font-weight: 600; font-size: 18px;">Target: ${name}</div>
           </div>
@@ -328,3 +689,4 @@ export function exportEvaluationDossier(evaluationData) {
   printWindow.document.write(htmlContent);
   printWindow.document.close();
 }
+

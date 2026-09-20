@@ -16,3 +16,4 @@ mcp[cli]
 requests
 beautifulsoup4
 psycopg2-binary
+reportlab>=4.0.0

@@ -1,270 +1,305 @@
-# Devil's Advocate Panel
+<div align="center">
 
-An adversarial multi-agent AI system designed to simulate an elite Venture Capital investment committee to stress-test startup pitches, business models, financial projections, and market dynamics.
+# ⚖️ Devil's Advocate Panel
 
----
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB.svg?logo=python&logoColor=white)](https://www.python.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-%3E%3D18.0.0-339933.svg?logo=node.js&logoColor=white)](https://nodejs.org/)
+[![React](https://img.shields.io/badge/React-19-61DAFB.svg?logo=react&logoColor=black)](https://react.dev/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.100%2B-009688.svg?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![LangGraph](https://img.shields.io/badge/Orchestration-LangGraph-FF6F00.svg)](https://langchain-ai.github.io/langgraph/)
+[![CI](https://github.com/Dineshs2004offcial/devils-advocate-panel/actions/workflows/tests.yml/badge.svg)](https://github.com/Dineshs2004offcial/devils-advocate-panel/actions)
 
-## 1. What the Project Does
+**An adversarial multi-agent AI system that simulates an elite Venture Capital investment committee to stress-test startup pitches, audit financial unit economics, and synthesize objective investment verdicts.**
 
-The **Devil's Advocate Panel** subjects startup pitches to rigorous, multi-perspective adversarial debate before an AI Judge renders a final investment verdict.
-
-### Core Agent Roles
-* **VC / Skeptical Agent**: Identifies operational vulnerabilities, valuation red flags, defensibility deficits, and capital inefficiency.
-* **Financial Analyst Agent**: Audits unit economics, CAC/LTV dynamics, gross margins, cash burn rate, and financial sustainability.
-* **Market Realist Agent**: Evaluates TAM/SAM/SOM, market saturation, incumbent moats, customer acquisition friction, and regulatory risks.
-* **AI Judge / Final Evaluator**: Weighs cross-agent debate, web research, and RAG data to render an objective verdict with dynamic scoring (0–100) and actionable recommendations.
-
-### Key Features
-* **Stateful Multi-Agent Debate Loop (LangGraph)**: Orchestrates a multi-round debate pipeline:
-  $$\text{Web/RAG Research} \longrightarrow \text{Round 1 Analysis} \longrightarrow \text{Cross-Challenge} \longrightarrow \text{Rebuttal} \longrightarrow \text{Round 2 Refinement} \longrightarrow \text{AI Judge Verdict}$$
-* **MCP (Model Context Protocol) Connectors**:
-  * **Web Research MCP**: Real-time web intelligence via DuckDuckGo / Tavily API.
-  * **Knowledge Base MCP**: Local RAG vector store powered by ChromaDB.
-  * **PostgreSQL MCP**: Persistent pitch history, debate transcripts, and evaluation sessions.
-  * **Executive Report MCP**: PDF, HTML, and Markdown executive dossier exporter.
-* **Modern React 19 Dashboard**: High-tech Vite dashboard featuring live multi-agent panel cards, workflow timeline indicators, transcript inspector, pitch comparison modal, and MCP status monitor.
-* **Streamlit UI**: Backup web application interface (`streamlit_app.py`).
+[Quick Start](#-quick-start) • [Why I Built This](#-why-i-built-this) • [Sample Verdict](#-sample-pitch--verdict-example) • [Architecture](#-system-architecture) • [MCP Connectors](#-mcp-connectors)
 
 ---
 
-## 2. How to Run It (Both Backend and Frontend Setup Process)
+<!-- DEMO MEDIA PLACEHOLDER -->
+```
++-----------------------------------------------------------------------------------+
+|                                                                                   |
+|                   [ 🎬 DEMO SCREENSHOT / ANIMATED PREVIEW ]                       |
+|                                                                                   |
+|       Interactive React 19 Dashboard: Live Agent Debate, Cross-Examination,       |
+|            ChromaDB RAG Benchmarks, and AI Judge Score Breakdown (0-100)          |
+|                                                                                   |
++-----------------------------------------------------------------------------------+
+```
+*(Drop `assets/demo.gif` or `assets/dashboard.png` here to preview the live panel in action)*
+
+---
+
+</div>
+
+## 💡 Why I Built This
+
+Most startup pitch feedback suffers from confirmation bias and lacks rigorous, multidisciplinary scrutiny before founders step into high-stakes investor meetings. I built the **Devil's Advocate Panel** to simulate an adversarial VC investment committee where specialized autonomous agents debate defensibility, audit unit economics, and challenge market assumptions. By combining **LangGraph** multi-agent state loops, **ChromaDB RAG** industry benchmarks, and **Model Context Protocol (MCP)** tools, the system delivers an unbiased, scored investment verdict in seconds.
+
+---
+
+## ⚡ Quick Start
 
 ### Prerequisites
-* **Python**: 3.10 or higher
-* **Node.js**: v18 or higher (npm v9+)
-* **PostgreSQL** *(Optional)*: Required for persistent SQL database storage (fallback memory engine available)
+* **Python**: 3.10+
+* **Node.js**: 18+ & npm 9+
+* **PostgreSQL** *(Optional)*: Persistent storage fallback to in-memory mode if omitted
+* **At least ONE LLM API Key**: Groq (recommended for speed), Google Gemini, OpenAI, or OpenRouter
 
 ---
 
-### Backend Setup Process
+### 1. Clone & Configure Environment
 
-1. **Navigate to the Project Root**:
-   ```bash
-   cd devils_advocate_panel
-   ```
-
-2. **Create and Activate a Virtual Environment**:
-   * **Windows (PowerShell)**:
-     ```powershell
-     python -m venv venv
-     .\venv\Scripts\activate
-     ```
-   * **Linux / macOS**:
-     ```bash
-     python3 -m venv venv
-     source venv/bin/activate
-     ```
-
-3. **Install Backend Dependencies**:
-   ```bash
-   pip install -r backend/requirements.txt
-   ```
-
-4. **Configure Environment Variables**:
-   Create a `.env` file in the root directory (see Section 4 for variable details).
-
-5. **Start the FastAPI Backend Server**:
-   ```bash
-   python -m uvicorn backend.app.main:app --reload --port 8000
-   ```
-   * **API Base URL**: `http://localhost:8000`
-   * **Interactive Swagger Documentation**: `http://localhost:8000/docs`
-
----
-
-### Frontend Setup Process
-
-1. **Navigate to the Frontend Directory**:
-   ```bash
-   cd frontend
-   ```
-
-2. **Install Node Dependencies**:
-   ```bash
-   npm install
-   ```
-
-3. **Start the Vite Development Server**:
-   ```bash
-   npm run dev
-   ```
-   * **Frontend App URL**: `http://localhost:5173`
-
----
-
-### Alternative Streamlit Setup (Optional)
-
-To run the lightweight single-page Streamlit interface:
 ```bash
-# From the project root with venv activated
-streamlit run streamlit_app.py
+git clone https://github.com/Dineshs2004offcial/devils-advocate-panel.git
+cd devils-advocate-panel
+
+# Copy example environment file
+cp .env.example .env
+```
+*(Open `.env` and add at least one API key, such as `GROQ_API_KEY` or `GEMINI_API_KEY`)*
+
+---
+
+### 2. Run Backend (FastAPI)
+
+```bash
+# Set up Python virtual environment
+python -m venv venv
+
+# Activate virtual environment
+# Windows (PowerShell):
+.\venv\Scripts\activate
+# Linux / macOS:
+source venv/bin/activate
+
+# Install dependencies
+pip install -r backend/requirements.txt
+
+# Start FastAPI server
+python -m uvicorn backend.app.main:app --reload --port 8000
+```
+* **API Documentation**: [http://localhost:8000/docs](http://localhost:8000/docs)
+
+---
+
+### 3. Run Frontend (React 19 + Vite)
+
+```bash
+# In a new terminal window
+cd frontend
+npm install
+npm run dev
+```
+* **Dashboard App**: [http://localhost:5173](http://localhost:5173)
+
+---
+
+### 🐳 Optional: Run with Docker Compose
+
+```bash
+docker-compose up --build
 ```
 
 ---
 
-## 3. What AI Model Used and Y
+## 📊 Sample Pitch & Verdict Example
 
-The Devil's Advocate Panel employs a **multi-tiered LLM routing architecture** combining high-speed open-weights inference and proprietary models:
+### Pitch Submission
+```json
+{
+  "startup_name": "HealthSync AI",
+  "problem": "Hospital scheduling inefficiencies and high radiologist burnout",
+  "solution": "Autonomous AI triaging and clinical schedule optimization platform",
+  "target_market": "Tier 1 hospital networks & radiology clinics",
+  "business_model": "B2B annual SaaS subscription per department ($48k/yr)",
+  "funding_amount": 750000
+}
+```
 
-### Models Used
-* **Groq (LLaMA 3.3 70B Versatile / LLaMA 3.1)**: Primary fast-inference model for multi-agent node executions.
-* **Google Gemini (Gemini 1.5 Flash / Gemini 3.6 Flash)**: Primary model for deep research synthesis, RAG document processing, and structured context reasoning.
-* **OpenAI (GPT-4o / GPT-4o-mini)**: High-accuracy model for final evaluation synthesis and deterministic JSON schema validation.
-* **OpenRouter**: Open gateway provider for fallback routing across open-source model providers.
+### Generated Committee Output & AI Judge Verdict
 
-### Why These Models Were Selected
-1. **Groq (LLaMA 3.3 70B)**:
-   * **Sub-Second Latency**: Multi-agent debate loops require multiple sequential and parallel LLM invocations per pitch. Groq delivers response times under 500ms per turn, eliminating UI latency bottlenecks.
-2. **Google Gemini (Gemini 1.5 / 3.6 Flash)**:
-   * **Context Window & Cost Efficiency**: Large context capabilities allow processing web search snippets, vector store documents, and long pitch submissions without truncation.
-3. **OpenAI (GPT-4o / GPT-4o-mini)**:
-   * **Structured Scoring Precision**: Exceptional adherence to complex JSON response formats required for evaluation scoring, risk metrics, and verdict synthesis.
-4. **Cascading Fallback Resilience (`invoke_with_fallback` & `ask_ai`)**:
-   * To prevent failure from API rate limits or network outages, the system executes an automated failover chain:
-     $$\text{Groq} \longrightarrow \text{Gemini} \longrightarrow \text{OpenAI} \longrightarrow \text{OpenRouter} \longrightarrow \text{Structured Fallback}$$
+```markdown
+═════════════════════════════════════════════════════════════════════════════════
+  AI JUDGE VERDICT: REVIEW  |  FINAL SCORE: 74 / 100  |  CONFIDENCE: 88%
+═════════════════════════════════════════════════════════════════════════════════
+
+⚖️ Executive Summary:
+HealthSync AI addresses a verified high-friction pain point with strong willingness-
+to-pay in enterprise healthcare. However, the committee flags significant customer
+acquisition friction and incumbent EHR vendor integration moats.
+
+🔍 Agent Committee Debate Highlights:
+• Skeptical VC: "High risk of Epic/Cerner launching native scheduling modules within
+  12 months, wiping out standalone point solutions."
+• Financial Analyst: "Healthy gross margin potential (82%), but sales cycle length
+  (9-14 months) requires higher capital cushion than $750k ask."
+• Market Realist: "Radiology TAM is $3.2B with 22% CAGR; high switching costs once
+  onboarded protect long-term retention."
+
+🛡️ Key Strengths:
+  [+] High average contract value ($48k ACV) with clear ROI metric for hospital CFOs.
+  [+] Deep workflow integration creates defensible switching barriers post-deployment.
+
+⚠️ Critical Vulnerabilities:
+  [-] Capital insufficiency: $750k funding is dangerously lean for enterprise healthcare sales cycles.
+  [-] Regulatory & compliance friction (HIPAA / BAA certification overhead).
+
+🎯 Actionable Recommendations:
+  1. Increase seed round target to $1.5M to ensure 18 months of runway through 12-month enterprise POCs.
+  2. Secure 2 signed hospital LOIs before institutional deployment.
+```
 
 ---
 
-## 4. What are the Env Vars and Y We Need
+## 🏗️ System Architecture
 
-Environment variables are defined in the root `.env` file to control API authentication, database connections, and model selections:
+```text
+                               ┌───────────────────────────┐
+                               │ React 19 + Vite Dashboard │
+                               │ (Tailored Dark Glass UI)  │
+                               └─────────────┬─────────────┘
+                                             │ REST API / SSE
+                                             ▼
+                               ┌───────────────────────────┐
+                               │      FastAPI Backend      │
+                               └─────────────┬─────────────┘
+                                             │
+                                             ▼
+                               ┌───────────────────────────┐
+                               │  LangGraph Debate Engine  │
+                               └─────────────┬─────────────┘
+                                             │
+          ┌──────────────────────────────────┼──────────────────────────────────┐
+          │                                  │                                  │
+          ▼                                  ▼                                  ▼
+ ┌─────────────────┐                ┌──────────────────┐               ┌─────────────────┐
+ │ Web Research MCP│                │  ChromaDB RAG    │               │  PostgreSQL DB  │
+ │  (Tavily / DDG) │                │ (Vector Storage) │               │ (Session Store) │
+ └─────────────────┘                └──────────────────┘               └─────────────────┘
+```
 
-| Environment Variable | Description | Why It Is Needed |
+---
+
+## 🔄 Multi-Agent LangGraph Debate Pipeline
+
+The core evaluation runs through a stateful multi-round debate graph built on **LangGraph**:
+
+```mermaid
+graph TD
+    A[Pitch Input] --> B[Research Node\nWeb Intelligence & ChromaDB RAG]
+    B --> C[Round 1 Node\nParallel Independent Assessments]
+    C --> D[Cross-Challenge Node\nAgents Challenge Peer Assumptions]
+    D --> E[Rebuttal Node\nAgents Defend & Adjust Theses]
+    E --> F[Round 2 Refinement Node\nConsolidated Agent Scoring]
+    F --> G{Loop Controller\nRounds < Max?}
+    G -- Yes --> D
+    G -- No --> H[Judge Node\nAI Verdict, Score & Risk Dossier]
+```
+
+### Agent Personas
+1. **VC / Skeptical Agent**: Identifies valuation red flags, defensibility deficits, platform risk, and capital efficiency issues.
+2. **Financial Analyst Agent**: Audits unit economics, CAC/LTV dynamics, gross margins, cash burn rate, and financial sustainability.
+3. **Market Realist Agent**: Evaluates TAM/SAM/SOM, market saturation, incumbent moats, customer acquisition friction, and regulatory hurdles.
+4. **AI Judge / Final Evaluator**: Weighs cross-agent debate, web research, and RAG data to render an objective verdict with dynamic scoring (0–100) and actionable recommendations.
+
+---
+
+## 🔌 MCP Connectors
+
+The backend integrates the **Model Context Protocol (MCP)** standard for standardized agent tool orchestration:
+
+| Connector | Technology | Purpose |
 | :--- | :--- | :--- |
-| `GROQ_API_KEY` | Groq API Key | Authenticates Groq for ultra-low latency LLaMA 3.3 agent execution across debate rounds. |
-| `GOOGLE_API_KEY` / `GEMINI_API_KEY` | Google Gemini API Key | Authenticates Google AI Studio for Gemini Flash model calls in RAG and web research synthesis. |
-| `OPENAI_API_KEY` | OpenAI API Key | Authenticates OpenAI services for GPT-4o final verdict evaluation and JSON formatting. |
-| `MISTRAL_API_KEY` | Mistral AI API Key | Enables Mistral model integration for alternative reasoning benchmarks. |
-| `OPENROUTER_API_KEY` | OpenRouter API Key | Provides fallback access to open-weights LLMs via OpenRouter's unified endpoint. |
-| `DATABASE_URL` | PostgreSQL Connection URI | Configures Database Connection (`postgresql+pg8000://...`) to persist user profiles, pitches, debate transcripts, and evaluation logs. |
-| `CHROMA_PERSIST_DIR` | Directory Path (`./data/chroma_db`) | Specifies local storage path for ChromaDB vector embeddings used in RAG document retrieval. |
-| `EMBEDDING_MODEL` | HuggingFace Model String | Sets the embedding model (`sentence-transformers/all-MiniLM-L6-v2`) used to chunk and vectorize business knowledge files. |
-| `TAVILY_API_KEY` | Tavily Web Search Key | Enables real-time web search MCP tool integration for market intelligence and competitor discovery. |
+| **Web Research MCP** | Tavily API / DuckDuckGo | Real-time market sizing, competitor discovery, and news sentiment |
+| **Knowledge Base MCP** | ChromaDB & MiniLM-L6-v2 | Vector similarity search against benchmark startup business models |
+| **PostgreSQL MCP** | SQLAlchemy / pg8000 | Structured persistence of pitch histories, transcripts, and session metrics |
+| **Executive Report MCP** | Native Exporter | Multi-format export (PDF, HTML, Markdown) of executive panel dossiers |
 
 ---
 
-## 5. Project Folder Structure and Architecture and Explanation
+## 🤖 Multi-Tier LLM Routing & Fallback
 
-### Folder Structure
+To guarantee high availability and sub-second agent turns, the system executes an automated failover chain:
+
+$$\text{Groq (LLaMA 3.3 70B)} \longrightarrow \text{Gemini (Flash)} \longrightarrow \text{OpenAI (GPT-4o)} \longrightarrow \text{OpenRouter} \longrightarrow \text{Structured Fallback}$$
+
+* **Groq (LLaMA 3.3 70B)**: Ultra-low latency (<500ms) execution for multi-turn debate rounds.
+* **Google Gemini (Gemini 1.5/3.6 Flash)**: Large context handling for multi-document RAG and web research synthesis.
+* **OpenAI (GPT-4o / GPT-4o-mini)**: High-precision structured output and JSON schema validation for judge verdicts.
+* **Zero-Failure Fallback**: In the event of network disconnection or absent keys, heuristic rule engines maintain application integrity.
+
+---
+
+## ⚙️ Environment Variables Reference
+
+Configure these in your `.env` file (see [`.env.example`](.env.example)):
+
+| Variable | Status | Default | Description |
+| :--- | :---: | :--- | :--- |
+| `GROQ_API_KEY` | **Recommended** | `""` | Primary key for fast LLaMA 3.3 agent execution |
+| `GEMINI_API_KEY` / `GOOGLE_API_KEY` | **Recommended** | `""` | Key for Google Gemini RAG and market synthesis |
+| `OPENAI_API_KEY` | Optional | `""` | Key for OpenAI GPT-4o verdict synthesis |
+| `MISTRAL_API_KEY` | Optional | `""` | Key for Mistral AI provider routing |
+| `OPENROUTER_API_KEY` | Optional | `""` | OpenRouter gateway key for open-source model fallback |
+| `TAVILY_API_KEY` | Optional | `""` | Tavily API key for live web research MCP |
+| `DATABASE_URL` | Optional | Memory Fallback | PostgreSQL connection string (`postgresql+pg8000://...`) |
+| `CHROMA_PERSIST_DIR` | Optional | `./data/chroma_db` | Storage path for ChromaDB vector embeddings |
+| `EMBEDDING_MODEL` | Optional | `sentence-transformers/all-MiniLM-L6-v2` | Embedding model for RAG vectorization |
+
+---
+
+## 📂 Project Structure
 
 ```text
 devils_advocate_panel/
-├── .env                    # Environment variables configuration
-├── docker-compose.yml      # Docker container configuration
-├── Dockerfile              # Container build specifications
+├── .env.example            # Annotated template for environment variables
+├── .github/workflows/      # GitHub Actions CI/CD automation
+│   └── tests.yml           # Pytest continuous integration workflow
+├── Dockerfile              # Container deployment specification
+├── docker-compose.yml      # Multi-container orchestration (DB + Backend + Frontend)
+├── pytest.ini              # Pytest environment & path configuration
 ├── requirements.txt        # Root Python dependencies
-├── streamlit_app.py        # Backup Streamlit dashboard application
+├── streamlit_app.py        # Lightweight backup Streamlit interface
+├── tests/                  # Backend unit & integration test suite
 │
-├── backend/                # FastAPI Backend Application
+├── backend/                # FastAPI Application
 │   ├── requirements.txt    # Backend Python package requirements
 │   └── app/
-│       ├── main.py         # FastAPI application entrypoint & CORS middleware
-│       ├── ai_service.py   # Fallback LLM invocation engine (ask_ai)
-│       ├── database.py     # SQLAlchemy DB session setup
-│       ├── models.py       # SQLAlchemy ORM models (User, Pitch, Evaluation)
-│       ├── schemas.py      # Pydantic data schemas & request/response validation
-│       │
-│       ├── agents/         # AI Agent Implementations
-│       │   ├── devils_advocate.py   # VC / Skeptical Agent logic
-│       │   ├── financial_agent.py   # Financial Analyst Agent logic
-│       │   ├── market_agent.py      # Market Realist Agent logic
-│       │   ├── final_evaluator.py   # AI Judge verdict & scoring engine
-│       │   └── panel.py             # Agent execution coordinator
-│       │
-│       ├── graph/          # LangGraph Workflow Orchestration
-│       │   ├── state.py    # DebateState TypedDict definition
-│       │   ├── nodes.py    # Multi-agent debate nodes (research, rounds 1 & 2, judge)
-│       │   └── graph.py    # LangGraph StateGraph builder & conditional loops
-│       │
-│       ├── llm/            # LLM Provider Integrations & Factory
-│       │   ├── factory.py  # LLM provider factory & fallback runner
-│       │   ├── gemini.py   # Google Gemini provider initialization
-│       │   ├── mistral.py  # Mistral AI provider initialization
-│       │   └── openai.py   # OpenAI provider initialization
-│       │
-│       ├── mcp/            # Model Context Protocol Connectors
-│       │   ├── client.py   # MCP Client connection manager
-│       │   ├── server.py   # Local MCP server instance
-│       │   ├── web.py      # Web research MCP tool (DuckDuckGo / Tavily)
-│       │   ├── postgres.py # Database health & MCP storage queries
-│       │   └── filesystem.py # Knowledge base file inspection tool
-│       │
-│       ├── rag/            # Retrieval-Augmented Generation Engine
-│       │   ├── chunking.py   # Document chunking logic
-│       │   ├── embeddings.py # SentenceTransformer embedding loader
-│       │   ├── ingestion.py  # Vector ingestion into ChromaDB
-│       │   └── retriever.py  # Context retriever for knowledge documents
-│       │
-│       └── routes/         # FastAPI REST API Endpoints
-│           ├── evaluation.py # Pitch evaluation & MCP status routes
-│           ├── pitch.py      # Pitch creation & retrieval routes
-│           └── user.py       # User management routes
+│       ├── main.py         # FastAPI entrypoint & CORS middleware
+│       ├── ai_service.py   # Multi-provider LLM failover router
+│       ├── agents/         # VC, Financial, Market, and Judge agents
+│       ├── graph/          # LangGraph state machine & debate nodes
+│       ├── llm/            # Provider factory (Groq, Gemini, OpenAI, Mistral)
+│       ├── mcp/            # Model Context Protocol servers & clients
+│       ├── rag/            # ChromaDB ingestion & vector retrieval
+│       ├── routes/         # REST API endpoints (evaluation, pitch, user)
+│       └── schemas/        # Pydantic data schemas
 │
-├── frontend/               # React 19 + Vite Frontend Application
-│   ├── package.json        # Frontend Node dependencies & scripts
-│   ├── vite.config.js      # Vite build configuration
-│   ├── index.html          # HTML entrypoint
-│   └── src/
-│       ├── main.jsx        # React root renderer
-│       ├── App.jsx         # Main application container
-│       ├── index.css       # Design tokens, custom animations, glassmorphism CSS
-│       ├── pages/
-│       │   └── Dashboard.jsx # Main executive evaluation dashboard
-│       └── components/
-│           ├── AgentCard.jsx         # Individual agent status card
-│           ├── AgentPanelGrid.jsx    # Live 4-agent committee grid
-│           ├── AnalysisCard.jsx      # Agent breakdown panel
-│           ├── ChatPitchInput.jsx    # Pitch submission & template selector
-│           ├── ComparisonModal.jsx   # Multi-pitch comparison tool
-│           ├── McpPanel.jsx          # Live MCP server status monitor
-│           ├── PitchForm.jsx         # Form pitch input component
-│           ├── ScoreDashboard.jsx    # Score gauge & breakdown visualization
-│           ├── Sidebar.jsx           # Application navigation sidebar
-│           ├── TranscriptModal.jsx   # Interactive debate transcript inspector
-│           └── VerdictCard.jsx       # Final AI Judge verdict presentation
-│
-├── data/                   # Data Storage Directory
-│   ├── chroma_db/          # Persistent ChromaDB vector database files
-│   └── knowledge_base/     # Benchmark business models & startup pitch docs
-│
-└── docs/                   # System Documentation
-    └── langchain-langgraph.md # LangChain & LangGraph integration guide
+└── frontend/               # React 19 + Vite Application
+    ├── package.json        # Frontend dependencies & scripts
+    ├── vite.config.js      # Vite build configuration
+    └── src/
+        ├── App.jsx         # Root dashboard view
+        ├── index.css       # Design tokens & glassmorphism theme
+        ├── components/     # UI components (AgentPanelGrid, ScoreDashboard, etc.)
+        └── pages/          # Executive dashboard views
 ```
 
 ---
 
-### System Architecture & Explanation
+## 🧪 Testing
 
-```text
-                               ┌──────────────────────────┐
-                               │  React 19 + Vite Dashboard │
-                               └────────────┬─────────────┘
-                                            │ REST API
-                                            ▼
-                               ┌──────────────────────────┐
-                               │     FastAPI Backend      │
-                               └────────────┬─────────────┘
-                                            │
-                                            ▼
-                               ┌──────────────────────────┐
-                               │ LangGraph Debate Engine  │
-                               └────────────┬─────────────┘
-                                            │
-         ┌──────────────────────────────────┼──────────────────────────────────┐
-         │                                  │                                  │
-         ▼                                  ▼                                  ▼
-┌─────────────────┐                ┌──────────────────┐               ┌─────────────────┐
-│ Web Research MCP│                │  ChromaDB RAG    │               │  PostgreSQL DB  │
-│ (Tavily/DDG)    │                │ (Vector Storage) │               │(Persisted Data) │
-└─────────────────┘                └──────────────────┘               └─────────────────┘
+Run backend unit and integration tests:
+
+```bash
+# Run test suite
+pytest tests/ -v
 ```
 
-#### LangGraph Stateful Multi-Agent Execution Flow
+---
 
-1. **`research_node`**: Fetches market data using the Web Research MCP and queries the ChromaDB Vector Store for industry benchmarks.
-2. **`round_1_node`**: Executes independent assessments simultaneously across the VC Skeptic, Financial Analyst, and Market Realist agents.
-3. **`cross_challenge_node`**: Agents review peer findings and construct counter-arguments targeting weaknesses in other agents' assumptions.
-4. **`rebuttal_node`**: Agents defend or modify their initial positions based on received challenges.
-5. **`round_2_node`**: Agents refine their assessments incorporating debate insights and counter-evidence.
-6. **`loop_controller_node`**: Evaluates debate constraints (`max_rounds = 2`). If rounds remain, loops back to challenge; otherwise proceeds to final verdict.
-7. **`judge_node`**: The AI Judge synthesizes the complete debate transcript, research brief, and agent scores to render the final investment decision.
+## 📄 License
+
+Distributed under the MIT License. See [`LICENSE`](LICENSE) for details.

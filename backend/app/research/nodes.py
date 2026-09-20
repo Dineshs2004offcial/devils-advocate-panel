@@ -1,11 +1,10 @@
-from app.llm.gemini import get_gemini
+from app.llm.factory import invoke_with_fallback
 from app.research.state import ResearchState
 from app.research.tools import web_search
 from app.rag.retriever import retrieve_documents
 
 
 def research_node(state: ResearchState) -> ResearchState:
-    llm = get_gemini()
 
     pitch = state.get("pitch", "")
     query = state.get("query", "").strip() or pitch
@@ -67,14 +66,15 @@ Return:
 9. SOURCES
 """
 
-    response = llm.invoke(prompt)
+    response = invoke_with_fallback(prompt)
+    res_content = response.content if hasattr(response, "content") else str(response)
 
     return {
         "query": query,
         "pitch": pitch,
         "search_results": search_results,
         "retrieved_context": retrieved_context,
-        "research_summary": response.content,
+        "research_summary": res_content,
         "sources": [
             item.get("url", "")
             for item in search_results

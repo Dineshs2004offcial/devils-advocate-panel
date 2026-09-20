@@ -1,9 +1,15 @@
+import pytest
 from app.agents.cross_examiner.graph import build_cross_examiner_graph
 
 
-def main():
+def test_cross_examiner_graph_compilation():
     graph = build_cross_examiner_graph()
+    assert graph is not None
+    assert hasattr(graph, "invoke")
 
+
+def test_cross_examiner_graph_invocation():
+    graph = build_cross_examiner_graph()
     result = graph.invoke({
         "pitch": """
         I want to build an AI-powered platform that helps college
@@ -25,20 +31,8 @@ def main():
         "user_response": ""
     })
 
-    print("\n========== CROSS-EXAMINER ==========")
-
-    print("\n--- CONTRADICTION ---")
-    print(result.get("contradiction"))
-
-    print("\n--- CRITICAL WEAKNESS ---")
-    print(result.get("critical_weakness"))
-
-    print("\n--- CHALLENGE ---")
-    print(result.get("challenge"))
-
-    print("\n--- CONTINUE ---")
-    print(result.get("continue_round"))
-
-
-if __name__ == "__main__":
-    main()
+    assert isinstance(result, dict)
+    assert "contradiction" in result
+    assert "critical_weakness" in result
+    assert "challenge" in result
+    assert "continue_round" in result

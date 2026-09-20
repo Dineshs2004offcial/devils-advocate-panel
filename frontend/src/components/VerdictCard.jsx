@@ -1,7 +1,11 @@
-import React from 'react';
-import { Award, CheckCircle2, AlertTriangle, ShieldAlert, Sparkles } from './Icons';
+import React, { useState } from 'react';
+import { Award, CheckCircle2, AlertTriangle, ShieldAlert, Sparkles, Download, FileText, Loader2 } from './Icons';
+import { downloadEvaluationPdf, exportEvaluationDossier } from '../services/api';
 
-export default function VerdictCard({ verdict, judgeData }) {
+export default function VerdictCard({ verdict, judgeData, evaluationData }) {
+  const [downloading, setDownloading] = useState(false);
+  const [downloadSuccess, setDownloadSuccess] = useState(false);
+
   if (!verdict && !judgeData) return null;
 
   const judge = judgeData || {};
@@ -44,6 +48,27 @@ export default function VerdictCard({ verdict, judgeData }) {
 
   const style = getVerdictStyle();
 
+  const handleDownloadPdf = async () => {
+    setDownloading(true);
+    setDownloadSuccess(false);
+    try {
+      const dataToExport = evaluationData || {
+        verdict: verdictText,
+        score: score,
+        judge: judge,
+        final_verdict: assessment
+      };
+      await downloadEvaluationPdf(dataToExport);
+      setDownloadSuccess(true);
+      setTimeout(() => setDownloadSuccess(false), 4000);
+    } catch (err) {
+      console.error("PDF download error:", err);
+      exportEvaluationDossier(evaluationData || { judge, verdict });
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   return (
     <div className="verdict-container" style={{ borderTop: `4px solid ${style.border}` }}>
       {/* Header Banner */}
@@ -62,12 +87,53 @@ export default function VerdictCard({ verdict, judgeData }) {
           </div>
         </div>
 
-        {/* Score Badge */}
-        <div className="verdict-score-box">
-          <span className="score-label">OVERALL SCORE</span>
-          <div className="score-value">
-            <span className="score-num" style={{ color: style.color }}>{score}</span>
-            <span className="score-total">/100</span>
+        {/* Score Badge & Action Controls */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <button
+            onClick={handleDownloadPdf}
+            disabled={downloading}
+            id="download-pdf-button"
+            className="action-btn"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '10px 18px',
+              background: style.color,
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '8px',
+              fontWeight: '600',
+              fontSize: '13px',
+              cursor: downloading ? 'wait' : 'pointer',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+              transition: 'all 0.2s ease',
+            }}
+          >
+            {downloading ? (
+              <>
+                <Loader2 size={16} className="spin" />
+                <span>Compiling PDF...</span>
+              </>
+            ) : downloadSuccess ? (
+              <>
+                <CheckCircle2 size={16} color="#ffffff" />
+                <span>PDF Downloaded!</span>
+              </>
+            ) : (
+              <>
+                <Download size={16} />
+                <span>Export Executive PDF</span>
+              </>
+            )}
+          </button>
+
+          <div className="verdict-score-box">
+            <span className="score-label">OVERALL SCORE</span>
+            <div className="score-value">
+              <span className="score-num" style={{ color: style.color }}>{score}</span>
+              <span className="score-total">/100</span>
+            </div>
           </div>
         </div>
       </div>

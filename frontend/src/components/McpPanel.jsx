@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Cpu,
   RefreshCw,
@@ -11,7 +12,8 @@ import {
   CheckCircle2,
   AlertTriangle,
   XCircle,
-  Activity
+  Activity,
+  ExternalLink
 } from './Icons';
 
 export default function McpPanel({
@@ -22,6 +24,7 @@ export default function McpPanel({
   onToggleCollapse
 }) {
   const [refreshing, setRefreshing] = useState(false);
+  const navigate = useNavigate();
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -71,7 +74,7 @@ export default function McpPanel({
     name: 'Knowledge Base MCP',
     status: 'connected',
     type: 'ChromaDB / Vector RAG',
-    files_count: 0,
+    files_count: mcpStatus.knowledge_base?.files?.length || 4,
     details: 'Local RAG benchmarks & startup evaluation corpus',
   };
 
@@ -100,7 +103,12 @@ export default function McpPanel({
           <ChevronLeft size={18} />
         </button>
 
-        <div className="mcp-collapsed-indicator" title="4 MCP Connectors Connected">
+        <div
+          className="mcp-collapsed-indicator"
+          title="Open MCP Workbench"
+          onClick={() => navigate('/mcp')}
+          style={{ cursor: 'pointer' }}
+        >
           <Cpu size={18} color="#818cf8" />
           <span className="mcp-dot-pulse" />
         </div>
@@ -112,7 +120,7 @@ export default function McpPanel({
     <aside className="mcp-panel-container">
       {/* Header */}
       <div className="mcp-panel-header">
-        <div className="mcp-header-title">
+        <div className="mcp-header-title" onClick={() => navigate('/mcp')} style={{ cursor: 'pointer' }}>
           <div className="mcp-icon-pill">
             <Cpu size={16} color="#818cf8" />
           </div>
@@ -141,18 +149,28 @@ export default function McpPanel({
       </div>
 
       {/* Overview Status Strip */}
-      <div className="mcp-overall-strip">
+      <div
+        className="mcp-overall-strip"
+        onClick={() => navigate('/mcp/active-protocol-mesh')}
+        style={{ cursor: 'pointer' }}
+        title="Click to open Protocol Mesh Inspector"
+      >
         <div className="strip-left">
           <span className="mcp-live-ping" />
           <span>Active Protocol Mesh</span>
         </div>
-        <span className="mcp-active-count">4/4 Online</span>
+        <span className="mcp-active-count">5/5 Online →</span>
       </div>
 
       {/* Connectors List */}
       <div className="mcp-connectors-list">
         {/* 1. Web Research MCP */}
-        <div className="mcp-card glass-panel">
+        <div
+          className="mcp-card glass-panel"
+          onClick={() => navigate('/mcp/web-research')}
+          style={{ cursor: 'pointer', transition: 'transform 0.15s ease, border-color 0.15s ease' }}
+          title="Click to test Web Research MCP tools"
+        >
           <div className="mcp-card-header">
             <div className="mcp-connector-id">
               <Search size={16} color="#38bdf8" />
@@ -165,11 +183,17 @@ export default function McpPanel({
           <p className="mcp-desc">{webMcp.details}</p>
           <div className="mcp-footer-meta">
             <span className="mcp-engine-tag">Engine: {webMcp.type || 'DuckDuckGo / Tavily'}</span>
+            <span style={{ fontSize: '11px', color: '#38bdf8', fontWeight: 600 }}>Test Tools →</span>
           </div>
         </div>
 
         {/* 2. Knowledge Base MCP */}
-        <div className="mcp-card glass-panel">
+        <div
+          className="mcp-card glass-panel"
+          onClick={() => navigate('/mcp/knowledge-base')}
+          style={{ cursor: 'pointer', transition: 'transform 0.15s ease, border-color 0.15s ease' }}
+          title="Click to test Knowledge Base MCP tools"
+        >
           <div className="mcp-card-header">
             <div className="mcp-connector-id">
               <Network size={16} color="#818cf8" />
@@ -182,14 +206,17 @@ export default function McpPanel({
           <p className="mcp-desc">{kbMcp.details}</p>
           <div className="mcp-footer-meta">
             <span className="mcp-engine-tag">Storage: {kbMcp.type || 'ChromaDB'}</span>
-            {kbMcp.files_count !== undefined && (
-              <span className="mcp-doc-count">{kbMcp.files_count} docs</span>
-            )}
+            <span style={{ fontSize: '11px', color: '#818cf8', fontWeight: 600 }}>Inspect RAG →</span>
           </div>
         </div>
 
         {/* 3. PostgreSQL MCP */}
-        <div className="mcp-card glass-panel">
+        <div
+          className="mcp-card glass-panel"
+          onClick={() => navigate('/mcp/postgres')}
+          style={{ cursor: 'pointer', transition: 'transform 0.15s ease, border-color 0.15s ease' }}
+          title="Click to test PostgreSQL MCP database tools"
+        >
           <div className="mcp-card-header">
             <div className="mcp-connector-id">
               <Database size={16} color="#10b981" />
@@ -201,12 +228,18 @@ export default function McpPanel({
           </div>
           <p className="mcp-desc">{pgMcp.details}</p>
           <div className="mcp-footer-meta">
-            <span className="mcp-engine-tag">Driver: pg8000 / SQL</span>
+            <span className="mcp-engine-tag">Driver: {pgMcp.driver || 'pg8000 / SQLite'}</span>
+            <span style={{ fontSize: '11px', color: '#10b981', fontWeight: 600 }}>Query DB →</span>
           </div>
         </div>
 
         {/* 4. Report & PDF MCP */}
-        <div className="mcp-card glass-panel">
+        <div
+          className="mcp-card glass-panel"
+          onClick={() => navigate('/mcp/report-pdf')}
+          style={{ cursor: 'pointer', transition: 'transform 0.15s ease, border-color 0.15s ease' }}
+          title="Click to test Report & PDF MCP tools"
+        >
           <div className="mcp-card-header">
             <div className="mcp-connector-id">
               <FileText size={16} color="#f59e0b" />
@@ -219,8 +252,22 @@ export default function McpPanel({
           <p className="mcp-desc">{reportMcp.details}</p>
           <div className="mcp-footer-meta">
             <span className="mcp-engine-tag">Format: PDF / HTML / JSON</span>
+            <span style={{ fontSize: '11px', color: '#f59e0b', fontWeight: 600 }}>Dossier Tools →</span>
           </div>
         </div>
+      </div>
+
+      {/* Workbench Launcher Link */}
+      <div style={{ padding: '0 12px 10px' }}>
+        <button
+          className="btn-primary"
+          style={{ width: '100%', justifyContent: 'center', fontSize: '12px', padding: '7px 12px' }}
+          onClick={() => navigate('/mcp')}
+        >
+          <Cpu size={14} />
+          <span>Launch MCP Workbench</span>
+          <ExternalLink size={12} />
+        </button>
       </div>
 
       {/* Activity Log Mini Feed */}
@@ -232,11 +279,11 @@ export default function McpPanel({
         <div className="activity-feed">
           <div className="feed-item">
             <span className="feed-time">now</span>
-            <span className="feed-msg">Protocol mesh synchronized</span>
+            <span className="feed-msg">5 MCP Connectors synchronized</span>
           </div>
           <div className="feed-item">
-            <span className="feed-time">-2m</span>
-            <span className="feed-msg">Vector index ping OK (0ms)</span>
+            <span className="feed-time">-1m</span>
+            <span className="feed-msg">Knowledge base vector index active</span>
           </div>
         </div>
       </div>

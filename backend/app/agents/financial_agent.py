@@ -12,7 +12,7 @@ def _clean_json_or_fallback(raw_text: str, fallback_dict: dict) -> dict:
         if clean.endswith("```"):
             clean = clean[:-3]
         return json.loads(clean.strip())
-    except Exception:
+    except (json.JSONDecodeError, ValueError, TypeError, Exception) as parse_err:
         return fallback_dict
 
 
